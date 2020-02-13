@@ -1,0 +1,28 @@
+2020-02-12 19:26:23.398 CST [885] LOG:  starting PostgreSQL 12.1 on x86_64-apple-darwin19.2.0, compiled by Apple clang version 11.0.0 (clang-1100.0.33.16), 64-bit
+2020-02-12 19:26:23.399 CST [885] LOG:  listening on IPv6 address "::1", port 5432
+2020-02-12 19:26:23.399 CST [885] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2020-02-12 19:26:23.400 CST [885] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2020-02-12 19:26:23.414 CST [886] LOG:  database system was interrupted; last known up at 2020-02-12 18:33:49 CST
+2020-02-12 19:26:23.497 CST [886] LOG:  database system was not properly shut down; automatic recovery in progress
+2020-02-12 19:26:23.500 CST [886] LOG:  redo starts at 0/19928448
+2020-02-12 19:26:23.500 CST [886] LOG:  invalid record length at 0/19928530: wanted 24, got 0
+2020-02-12 19:26:23.500 CST [886] LOG:  redo done at 0/199284F8
+2020-02-12 19:26:23.511 CST [885] LOG:  database system is ready to accept connections
+2020-02-12 19:27:14.319 CST [894] ERROR:  syntax error at or near "varchar" at character 49
+2020-02-12 19:27:14.319 CST [894] STATEMENT:  alter table tb_fund_name alter fund_manager set varchar(20);
+2020-02-12 19:27:19.146 CST [894] ERROR:  syntax error at or near "varchar" at character 45
+2020-02-12 19:27:19.146 CST [894] STATEMENT:  alter table tb_fund_name alter fund_manager varchar(20);
+2020-02-12 19:28:04.637 CST [894] ERROR:  syntax error at or near "varchar" at character 52
+2020-02-12 19:28:04.637 CST [894] STATEMENT:  alter table tb_fund_name alter COLUMN fund_manager varchar(20);
+2020-02-12 19:31:41.973 CST [894] ERROR:  syntax error at or near "character" at character 52
+2020-02-12 19:31:41.973 CST [894] STATEMENT:  alter table tb_fund_name alter COLUMN fund_manager character varying(50)；
+	alter table tb_fund_name alter COLUMN fund_manager type character varying(50)；
+	ALTER TABLE TB_FUND_NAME ALTER COLUMN FUND_MANAGER TYPE VARCHAR(20);
+2020-02-12 19:32:09.678 CST [894] ERROR:  syntax error at or near "VARCHAR" at character 52
+2020-02-12 19:32:09.678 CST [894] STATEMENT:  ALTER TABLE TB_FUND_NAME ALTER COLUMN FUND_MANAGER VARCHAR(20);
+2020-02-12 19:46:08.842 CST [1064] ERROR:  duplicate key value violates unique constraint "tb_fund_name_pkey"
+2020-02-12 19:46:08.842 CST [1064] DETAIL:  Key (code)=(160324) already exists.
+2020-02-12 19:46:08.842 CST [1064] STATEMENT:  INSERT INTO TB_FUND_NAME VALUES (160324,'华夏磐晟混合(LOF)','董阳阳')
+2020-02-12 20:41:22.535 CST [894] ERROR:  column "version" does not exist at character 9
+2020-02-12 20:41:22.535 CST [894] STATEMENT:  select ("version");
+2020-02-12 21:19:41.159 CST [2431] FATAL:  database "financedb" does not exist

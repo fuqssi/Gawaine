@@ -112,12 +112,14 @@ def insert_fund_value(FUND_CODE):
             logger.info_log('GET %s'%(url))
             RESPONES = requests.get(url,timeout=15).json()
         except Exception as e:
+            #如果调用接口时如果碰见超时则跳出循环再试一次，continue可确保页码计数不自增while不断重试
+            #尽量确保记录不遗漏
             logger.exception_log('%s %s'%(url,e))
             time.sleep(3)
             continue
         else:
             while j < len(RESPONES['result']['data']['data']):
-                logger.info_log('Current fund had records:%s,Now:%s'%(len(RESPONES['result']['data']['data']),j+1))
+                logger.info_log('Current fund had records:%s,Now:%s'%(TOTAL_RECORDS_NUM,i+1))
                 try:
                     DB_CTL.sql_insert_excute(\
                         SQL_INSERT_FUND_NET_WORTH,(\

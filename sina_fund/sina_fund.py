@@ -8,8 +8,8 @@ from db_control import *
 from LogRecorder import *
 
 config=ConfigParser()
-#config.read('/home/ubuntu/Gawaine/sina_fund/config.cfg')
-config.read('/Users/yanxl/OneDrive/Code/Gawaine/sina_fund/config.cfg')
+config.read('/home/ubuntu/Gawaine/sina_fund/config.cfg')
+#config.read('/Users/yanxl/OneDrive/Code/Gawaine/sina_fund/config.cfg')
 SQL_INSERT_FUND_NET_WORTH = 'INSERT INTO tb_fund_net_worth (NET_WORTH_DATE,CODE,NET_WORTH,CUMULATIVE_NET_WORTH) VALUES (%s,%s,%s,%s)'
 SQL_INSERT_FUND_NAME = 'INSERT INTO TB_FUND_NAME VALUES (%s,%s,%s)'
 

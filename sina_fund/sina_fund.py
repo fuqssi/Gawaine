@@ -1,5 +1,6 @@
 from configparser import ConfigParser
 import requests
+import time
 import re
 import json
 import demjson
@@ -8,7 +9,7 @@ from db_control import *
 from LogRecorder import *
 
 config=ConfigParser()
-config.read('/home/ubuntu/Gawaine/sina_fund/config.cfg')
+config.read('/home/ubuntu/Gawaine/sina_fund/config.cfg'),'Load config file error'
 #config.read('/Users/yanxl/OneDrive/Code/Gawaine/sina_fund/config.cfg')
 SQL_INSERT_FUND_NET_WORTH = 'INSERT INTO tb_fund_net_worth (NET_WORTH_DATE,CODE,NET_WORTH,CUMULATIVE_NET_WORTH) VALUES (%s,%s,%s,%s)'
 SQL_INSERT_FUND_NAME = 'INSERT INTO TB_FUND_NAME VALUES (%s,%s,%s)'
@@ -101,7 +102,7 @@ def insert_fund_value(FUND_CODE):
     DB_CTL = db_control()
     PAGE_NUM  = 1
     url = (config.get('sina_fund_worth','url')+'symbol=%s&page=%s')%(FUND_CODE,PAGE_NUM)
-    RESPONES = requests.get(url).json()
+    RESPONES = requests.get(url,timeout=15).json()
     TOTAL_RECORDS_NUM = RESPONES['result']['data']['total_num']
     i = 0
     j = 0
@@ -112,9 +113,11 @@ def insert_fund_value(FUND_CODE):
             RESPONES = requests.get(url,timeout=15).json()
         except Exception as e:
             logger.exception_log('%s %s'%(url,e))
+            time.sleep(3)
+            continue
         else:
             while j < len(RESPONES['result']['data']['data']):
-                logger.info_log('Current fund had records:%s,Now:%s'%(len(RESPONES['result']['data']['data']),j))
+                logger.info_log('Current fund had records:%s,Now:%s'%(len(RESPONES['result']['data']['data']),j+1))
                 try:
                     DB_CTL.sql_insert_excute(\
                         SQL_INSERT_FUND_NET_WORTH,(\

@@ -108,7 +108,7 @@ def insert_fund_value(FUND_CODE):
         url = (config.get('sina_fund_worth','url')+'symbol=%s&page=%s')%(FUND_CODE,PAGE_NUM)
         try:
             logger.info_log('GET %s'%(url))
-            RESPONES = requests.get(url,timeout=10).json()
+            RESPONES = requests.get(url,timeout=15).json()
         except Exception as e:
             logger.exception_log('%s %s'%(url,e))
         else:
@@ -134,7 +134,7 @@ def insert_fund_value(FUND_CODE):
                         break
             j = 1
             PAGE_NUM += 1
-        DB_CTL.cursor_close()
+    DB_CTL.cursor_close()
 
 def select_all_code():
     DB_CTL = db_control()

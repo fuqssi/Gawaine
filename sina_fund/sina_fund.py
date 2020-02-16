@@ -8,7 +8,7 @@ from db_control import *
 from LogRecorder import *
 
 config=ConfigParser()
-config.read('config.cfg')
+config.read('/home/ubuntu/Gawaine/sina_fund/config.cfg')
 SQL_INSERT_FUND_NET_WORTH = 'INSERT INTO tb_fund_net_worth (NET_WORTH_DATE,CODE,NET_WORTH,CUMULATIVE_NET_WORTH) VALUES (%s,%s,%s,%s)'
 SQL_INSERT_FUND_NAME = 'INSERT INTO TB_FUND_NAME VALUES (%s,%s,%s)'
 
@@ -113,7 +113,7 @@ def insert_fund_value(FUND_CODE):
             logger.exception_log('%s %s'%(url,e))
         else:
             while j < len(RESPONES['result']['data']['data']):
-                logger.info_log('Current fund had records:%s,Now:%s'%(len(RESPONES['result']['data']['data'],j)))
+                logger.info_log('Current fund had records:%s,Now:%s'%(len(RESPONES['result']['data']['data']),j))
                 try:
                     DB_CTL.sql_insert_excute(\
                         SQL_INSERT_FUND_NET_WORTH,(\

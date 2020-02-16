@@ -6,7 +6,7 @@ class db_control:
     def __init__(self):
         self.logger = LogRecorder()
         config = ConfigParser()
-        assert config.read('config.cfg'),\
+        assert config.read('/home/ubuntu/Gawaine/sina_fund/config.cfg'),\
             'Load config file error'
         self.DBNAME = config.get('db','dbname')
         self.USERNAME = config.get('db','username')

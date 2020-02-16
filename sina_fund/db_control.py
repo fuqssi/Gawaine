@@ -1,10 +1,12 @@
 from configparser import ConfigParser
 import psycopg2
+from LogRecorder import *
 
 class db_control:
     def __init__(self):
+        self.logger = LogRecorder()
         config = ConfigParser()
-        config.read('config.cfg')
+        assert config.read('/Users/yanxl/OneDrive/Code/Gawaine/sina_fund/config.cfg')
         self.DBNAME = config.get('db','dbname')
         self.USERNAME = config.get('db','username')
         self.PASSWORD = config.get('db','password')
@@ -14,53 +16,30 @@ class db_control:
 
     def sql_select_excute(self,sql_string):
         try:
-            CURSOR = self.CONN.cursor()            
-        except Exception as e:
-            print(e)
-        else:
+            CURSOR = self.CONN.cursor()
             CURSOR.execute(sql_string)
-            RESULT = CURSOR.fetchall()
+            RESULT = CURSOR.fetchall()            
+        except Exception as e:
+            self.logger.exception_log(e)
+        else:
             return RESULT         
 
     def sql_insert_excute(self,sql_string,sql_param):
         try:
             CURSOR = self.CONN.cursor()
-        except Exception as e:
-            print(e)
-        else:
             CURSOR.execute(sql_string,sql_param)
             self.CONN.commit()
+        except Exception as e:
+            self.logger.exception_log(e)
+        else:
             return None
     
     def cursor_close(self):
         self.CONN.close()
         return None
 
-
-
-
-            
-'''   
-    def select_item(self,):
-        conn = db_conn()
-        if not conn:
-            return
-        cur = conn.cursor()
-        cur.execute(SETLECT_FUND_NAME)
-        print(cur.fetchone())
-        db_close(conn)
-
-    def insert_item():
-        conn = db_conn()
-        if not conn:
-            return
-        cur = conn.cursor()
-        cur.execute(INSERT_FUND_NAME)
-        print(cur.fetchone())
-        db_close(conn)
-
 if __name__ == "__main__":
-    sql_select_excute(self,"SELECT * FROM TB_FUND_NAME;")
-    
-'''
-
+    DB_CTL = db_control()
+    res = DB_CTL.sql_select_excute('select code from tb_fund_name;')
+    print(res)
+    DB_CTL.cursor_close()

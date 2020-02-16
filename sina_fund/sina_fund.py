@@ -8,7 +8,7 @@ from db_control import *
 from LogRecorder import *
 
 config=ConfigParser()
-config.read('/Users/yanxl/OneDrive/Code/Gawaine/sina_fund/config.cfg')
+config.read('config.cfg')
 SQL_INSERT_FUND_NET_WORTH = 'INSERT INTO tb_fund_net_worth (NET_WORTH_DATE,CODE,NET_WORTH,CUMULATIVE_NET_WORTH) VALUES (%s,%s,%s,%s)'
 SQL_INSERT_FUND_NAME = 'INSERT INTO TB_FUND_NAME VALUES (%s,%s,%s)'
 
@@ -40,7 +40,7 @@ def insert_fund_name():
     DB_CTL = db_control()
     RECORDS_PER_PAGE = int(config.get('sina_fund','num'))
     TOTAL_RECORDS_NUM = get_fund_name(1)['total_num']
-    PAGE_NUM = 14
+    PAGE_NUM = 1
     i = 0
     j = 0
     while i < TOTAL_RECORDS_NUM:
@@ -63,6 +63,7 @@ def insert_fund_name():
                 i += 1
                 j += 1
                 if i == TOTAL_RECORDS_NUM:
+                    logger.info_log('======All of records are processed done !======')
                     break
                 
         PAGE_NUM += 1
@@ -110,8 +111,14 @@ def select_all_code():
     DB_CTL.cursor_close()
 
 if __name__ == "__main__":
+
+    #插入tb_fun_name表数据
     #insert_fund_name()
-    #insert_fund_value('005312')
+
+    #insert_fund_value('005312') #测试insert方法
+
+    #根据tb_fund_name表中的code列插入历史净值
     CODES = select_all_code()
     for i in CODES:
+        logger.info_log(i)
         insert_fund_value(i[0])

@@ -27,7 +27,7 @@ SET default_table_access_method = heap;
 CREATE TABLE public.tb_fund_name (
     code character varying(6) NOT NULL,
     name character varying(50) NOT NULL,
-    fund_manager character varying(20),
+    fund_manager character varying(100),
     last_update date
 );
 

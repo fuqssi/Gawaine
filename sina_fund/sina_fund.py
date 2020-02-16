@@ -112,7 +112,7 @@ def insert_fund_value(FUND_CODE):
         except Exception as e:
             logger.exception_log('%s %s'%(url,e))
         else:
-            while j < len(RESPONES['result']['data']['data']):
+            while j <= len(RESPONES['result']['data']['data']):
                 logger.info_log('Current fund had records:%s,Now:%s'%(len(RESPONES['result']['data']['data']),j))
                 try:
                     DB_CTL.sql_insert_excute(\

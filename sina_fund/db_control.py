@@ -21,7 +21,7 @@ class db_control:
             CURSOR.execute(sql_string)
             RESULT = CURSOR.fetchall()            
         except Exception as e:
-            self.logger.exception_log('【%s %s】 %s'%(sql_string,sql_param,e))
+            self.logger.exception_log('【%s 】 %s'%(sql_string,e))
         else:
             return RESULT         
 

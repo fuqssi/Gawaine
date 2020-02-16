@@ -14,12 +14,25 @@ SQL_INSERT_FUND_NAME = 'INSERT INTO TB_FUND_NAME VALUES (%s,%s,%s)'
 
 logger = LogRecorder()
 
+#==================================    
+
+# 新浪基金接口返回字符串整形规则
+
+#==================================    
 
 def fund_rank_resp_fmt(TEXT):
     TEXT = re.sub(r'^//.*\s','',TEXT)
     TEXT = re.sub(r'^IO.{21}','',TEXT)
     TEXT = re.sub(r'].exec.*',']}',TEXT)
     return TEXT    
+
+
+#==================================    
+
+# 获取新浪基金接口信息
+# 交给fund_rank_resp_fmt()和demjson.decode()进行json格式化
+
+#==================================       
 
 def get_fund_name(page_num):
     SINA_FUND_URL = (config.get('sina_fund','url')\
@@ -30,12 +43,21 @@ def get_fund_name(page_num):
         +'type2='+config.get('sina_fund','type2')\
         +'&type3='+config.get('sina_fund','type3'))\
         %(page_num)
+    try:
+        RESPONES = fund_rank_resp_fmt(requests.get(SINA_FUND_URL).text)
+        RESPONES = demjson.decode(RESPONES)
+    except  Exception  as  e:
+        logger.exception_log('Get %s %s'%(SINA_FUND_URL,e))
+    else:
+        return RESPONES
 
-    RESPONES = fund_rank_resp_fmt(requests.get(SINA_FUND_URL).text)
-    RESPONES = demjson.decode(RESPONES)
-    return RESPONES
 
 
+#==================================    
+
+#插入基金基本信息（代码、名称、基金经理、净值更新日期）
+
+#==================================  
 def insert_fund_name():
     DB_CTL = db_control()
     RECORDS_PER_PAGE = int(config.get('sina_fund','num'))
@@ -52,8 +74,6 @@ def insert_fund_name():
             try:
                 DB_CTL.sql_insert_excute(SQL_INSERT_FUND_NAME,(RECORDS['data'][j]['symbol'],\
                         RECORDS['data'][j]['name'],RECORDS['data'][j]['jjjl']))
-                #利用遍历基金信息的顺便就用insert_fund_value()把基金历史净值入库了
-                #insert_fund_value(RECORDS['data'][j]['symbol'])
             except Exception as e:
                 logger.exception_log(e)
                 i += 1
@@ -70,6 +90,12 @@ def insert_fund_name():
         j = 0
     DB_CTL.cursor_close()
 
+
+#==================================    
+
+#插入基金净值（日期、代码、净值、累计净值）
+
+#==================================   
 def insert_fund_value(FUND_CODE):
     DB_CTL = db_control()
     PAGE_NUM  = 1
@@ -80,29 +106,35 @@ def insert_fund_value(FUND_CODE):
     j = 0
     while i < int(TOTAL_RECORDS_NUM):
         url = (config.get('sina_fund_worth','url')+'symbol=%s&page=%s')%(FUND_CODE,PAGE_NUM)
-        RESPONES = requests.get(url).json()
-
-        while j < len(RESPONES['result']['data']['data']):
-            try:
-                DB_CTL.sql_insert_excute(\
-                    SQL_INSERT_FUND_NET_WORTH,(\
-                    RESPONES['result']['data']['data'][j]['fbrq'],\
-                    FUND_CODE,\
-                    RESPONES['result']['data']['data'][j]['jjjz'],\
-                    RESPONES['result']['data']['data'][j]['ljjz']))
-            except Exception as e:
-                logger.exception_log(e)
-                i += 1
-                j += 1
-                continue
-            else:
-                i += 1
-                j += 1
-                if j == TOTAL_RECORDS_NUM:
-                    break
-        j = 1
-        PAGE_NUM += 1
-    DB_CTL.cursor_close()
+        try:
+            logger.info_log('GET %s'%(url))
+            RESPONES = requests.get(url,timeout=10).json()
+        except Exception as e:
+            logger.exception_log('%s %s'%(url,e))
+        else:
+            while j < len(RESPONES['result']['data']['data']):
+                logger.info_log('Current fund had records:%s,Now:%s'%(len(RESPONES['result']['data']['data'],j)))
+                try:
+                    DB_CTL.sql_insert_excute(\
+                        SQL_INSERT_FUND_NET_WORTH,(\
+                        RESPONES['result']['data']['data'][j]['fbrq'],\
+                        FUND_CODE,\
+                        RESPONES['result']['data']['data'][j]['jjjz'],\
+                        RESPONES['result']['data']['data'][j]['ljjz']))
+                except Exception as e:
+                    logger.exception_log(e)
+                    i += 1
+                    j += 1
+                    continue
+                else:
+                    i += 1
+                    j += 1
+                    if j == TOTAL_RECORDS_NUM:
+                        logger.info_log('======All of records are processed done !======')
+                        break
+            j = 1
+            PAGE_NUM += 1
+        DB_CTL.cursor_close()
 
 def select_all_code():
     DB_CTL = db_control()

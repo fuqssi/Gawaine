@@ -40,6 +40,6 @@ class db_control:
 
 if __name__ == "__main__":
     DB_CTL = db_control()
-    res = DB_CTL.sql_select_excute('select code from tb_fund_name;')
-    print(res)
+    res = DB_CTL.sql_select_excute('select * from tb_fund_name;')
+    print(res[0][0])
     DB_CTL.cursor_close()

@@ -53,7 +53,7 @@ def insert_fund_name():
                 DB_CTL.sql_insert_excute(SQL_INSERT_FUND_NAME,(RECORDS['data'][j]['symbol'],\
                         RECORDS['data'][j]['name'],RECORDS['data'][j]['jjjl']))
                 #利用遍历基金信息的顺便就用insert_fund_value()把基金历史净值入库了
-                insert_fund_value(RECORDS['data'][j]['symbol'])
+                #insert_fund_value(RECORDS['data'][j]['symbol'])
             except Exception as e:
                 logger.exception_log(e)
                 i += 1
@@ -105,11 +105,13 @@ def insert_fund_value(FUND_CODE):
 
 def select_all_code():
     DB_CTL = db_control()
-    res = DB_CTL.sql_select_excute('select code from tb_fund_name;')
-    print(res)
+    res = DB_CTL.sql_select_excute('select * from tb_fund_name;')
+    return res
     DB_CTL.cursor_close()
 
 if __name__ == "__main__":
-    insert_fund_name()
+    #insert_fund_name()
     #insert_fund_value('005312')
-    #select_all_code()
+    CODES = select_all_code()
+    for i in CODES:
+        insert_fund_value(i[0])

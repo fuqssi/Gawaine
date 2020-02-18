@@ -5,8 +5,9 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: 当前文件",
+            "name": "Python3.8: 当前文件",
             "type": "python",
+            "pythonPath":"/usr/local/opt/python@3.8/bin/python3",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal"

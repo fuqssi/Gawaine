@@ -1,25 +1,24 @@
 from configparser import ConfigParser
-import requests
 import time
 import re
 import json
 import demjson
-from logging import *
 from db_control import *
 from LogRecorder import *
+from session_rqst import *
 
 config=ConfigParser()
-config.read('/home/ubuntu/Gawaine/sina_fund/config.cfg'),'Load config file error'
-#config.read('/Users/yanxl/OneDrive/Code/Gawaine/sina_fund/config.cfg')
+#config.read('/home/ubuntu/Gawaine/sina_fund/config.cfg'),'Load config file error'
+config.read('/Users/yanxl/OneDrive/Code/Gawaine/sina_fund/config.cfg')
 SQL_INSERT_FUND_NET_WORTH = 'INSERT INTO tb_fund_net_worth (NET_WORTH_DATE,CODE,NET_WORTH,CUMULATIVE_NET_WORTH) VALUES (%s,%s,%s,%s)'
 SQL_INSERT_FUND_NAME = 'INSERT INTO TB_FUND_NAME VALUES (%s,%s,%s)'
-
+req = session_rqst()
 logger = LogRecorder()
 
 #==================================    
-
+#
 # 新浪基金接口返回字符串整形规则
-
+#
 #==================================    
 
 def fund_rank_resp_fmt(TEXT):
@@ -30,10 +29,10 @@ def fund_rank_resp_fmt(TEXT):
 
 
 #==================================    
-
+#
 # 获取新浪基金接口信息
 # 交给fund_rank_resp_fmt()和demjson.decode()进行json格式化
-
+#
 #==================================       
 
 def get_fund_name(page_num):
@@ -46,19 +45,20 @@ def get_fund_name(page_num):
         +'&type3='+config.get('sina_fund','type3'))\
         %(page_num)
     try:
-        RESPONES = fund_rank_resp_fmt(requests.get(SINA_FUND_URL).text)
+        RESPONES = fund_rank_resp_fmt(req.get(SINA_FUND_URL).text)
         RESPONES = demjson.decode(RESPONES)
     except  Exception  as  e:
         logger.exception_log('Get %s %s'%(SINA_FUND_URL,e))
     else:
+        print(RESPONES)
         return RESPONES
 
 
 
 #==================================    
-
+#
 #插入基金基本信息（代码、名称、基金经理、净值更新日期）
-
+#
 #==================================  
 def insert_fund_name():
     DB_CTL = db_control()
@@ -94,15 +94,15 @@ def insert_fund_name():
 
 
 #==================================    
-
+#
 #插入基金净值（日期、代码、净值、累计净值）
-
+#
 #==================================   
 def insert_fund_value(FUND_CODE):
     DB_CTL = db_control()
     PAGE_NUM  = 1
     url = (config.get('sina_fund_worth','url')+'symbol=%s&page=%s')%(FUND_CODE,PAGE_NUM)
-    RESPONES = requests.get(url,timeout=15).json()
+    RESPONES = req.get(url).json()
     TOTAL_RECORDS_NUM = RESPONES['result']['data']['total_num']
     i = 0
     j = 0
@@ -110,10 +110,14 @@ def insert_fund_value(FUND_CODE):
         url = (config.get('sina_fund_worth','url')+'symbol=%s&page=%s')%(FUND_CODE,PAGE_NUM)
         try:
             logger.info_log('GET %s'%(url))
-            RESPONES = requests.get(url,timeout=15).json()
+            RESPONES = req.get(url).json()
         except Exception as e:
+            #==================================    
+            #       
             #如果调用接口时如果碰见超时则跳出循环再试一次，continue可确保页码计数不自增while不断重试
             #尽量确保记录不遗漏
+            #
+            #================================== 
             logger.exception_log('%s %s'%(url,e))
             time.sleep(3)
             continue
@@ -145,10 +149,14 @@ def insert_fund_value(FUND_CODE):
 def select_all_code():
     DB_CTL = db_control()
     res = DB_CTL.sql_select_excute('select * from tb_fund_name;')
-    return res
     DB_CTL.cursor_close()
+    return res
+    
 
 if __name__ == "__main__":
+
+    #res = get_fund_name(1)
+    
 
     #插入tb_fun_name表数据
     #insert_fund_name()
@@ -156,7 +164,7 @@ if __name__ == "__main__":
     #insert_fund_value('005312') #测试insert方法
 
     #根据tb_fund_name表中的code列插入历史净值
-    CODES = select_all_code()
+'''    CODES = select_all_code()
     for i in CODES:
         logger.info_log(i)
-        insert_fund_value(i[0])
+        insert_fund_value(i[0])'''

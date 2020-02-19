@@ -1,5 +1,8 @@
 from configparser import ConfigParser
 import time
+import os
+import sys
+import datetime
 import re
 import json
 import demjson
@@ -7,11 +10,13 @@ from db_control import *
 from LogRecorder import *
 from session_rqst import *
 
+PATH = os.path.join(sys.path[0],"config.cfg")
 config=ConfigParser()
-#config.read('/home/ubuntu/Gawaine/sina_fund/config.cfg'),'Load config file error'
-config.read('/Users/yanxl/OneDrive/Code/Gawaine/sina_fund/config.cfg')
+print(PATH)
+config.read(PATH)
 SQL_INSERT_FUND_NET_WORTH = 'INSERT INTO tb_fund_net_worth (NET_WORTH_DATE,CODE,NET_WORTH,CUMULATIVE_NET_WORTH) VALUES (%s,%s,%s,%s)'
 SQL_INSERT_FUND_NAME = 'INSERT INTO TB_FUND_NAME VALUES (%s,%s,%s)'
+SQL_FUND_LAST_UPDATE = 'UPDATE TB_FUND_NAME SET last_update=%s WHERE CODE =%s'
 req = session_rqst()
 logger = LogRecorder()
 
@@ -106,7 +111,13 @@ def insert_fund_value(FUND_CODE):
     TOTAL_RECORDS_NUM = RESPONES['result']['data']['total_num']
     i = 0
     j = 0
-    while i < int(TOTAL_RECORDS_NUM):
+            
+    while len(RESPONES['result']['data']['data']) != 0:
+        #==================================    
+        #       
+        #我发现新浪历史净值的记录总数不准，只好尽可能的翻页，如果返回的json item数量为0则跳出循环
+        #更新tb_fund_name最后更新日期
+        #================================== 
         url = (config.get('sina_fund_worth','url')+'symbol=%s&page=%s')%(FUND_CODE,PAGE_NUM)
         try:
             logger.info_log('GET %s'%(url))
@@ -139,11 +150,10 @@ def insert_fund_value(FUND_CODE):
                 else:
                     i += 1
                     j += 1
-                    if j == TOTAL_RECORDS_NUM:
-                        logger.info_log('======All of records are processed done !======')
-                        break
             j = 0
             PAGE_NUM += 1
+    DB_CTL.sql_insert_excute(SQL_FUND_LAST_UPDATE,(datetime.date.today(),FUND_CODE))
+    logger.info_log('======All of records are processed done !======')
     DB_CTL.cursor_close()
 
 def select_all_code():
@@ -164,7 +174,7 @@ if __name__ == "__main__":
     #insert_fund_value('005312') #测试insert方法
 
     #根据tb_fund_name表中的code列插入历史净值
-'''    CODES = select_all_code()
+    CODES = select_all_code()
     for i in CODES:
         logger.info_log(i)
-        insert_fund_value(i[0])'''
+        insert_fund_value(i[0])

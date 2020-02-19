@@ -1,12 +1,15 @@
 from configparser import ConfigParser
 import psycopg2
+import os
+import sys
 from LogRecorder import *
 
 class db_control:
     def __init__(self):
         self.logger = LogRecorder()
+        self.PATH = os.path.join(sys.path[0],"config.cfg")
         config = ConfigParser()
-        assert config.read('/home/ubuntu/Gawaine/sina_fund/config.cfg'),'Load config file error'
+        config.read(self.PATH)
         self.DBNAME = config.get('db','dbname')
         self.USERNAME = config.get('db','username')
         self.PASSWORD = config.get('db','password')

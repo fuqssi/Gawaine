@@ -31,7 +31,7 @@ class db_control:
     def sql_insert_excute(self,sql_string,sql_param):
         try:
             CURSOR = self.CONN.cursor()
-            CURSOR.execute(sql_string+sql_param)
+            CURSOR.execute(sql_string,sql_param)
         except Exception as e:
             self.logger.exception_log('【%s %s】 %s'%(sql_string,sql_param,e))
         else:
@@ -39,11 +39,10 @@ class db_control:
         finally:
             self.CONN.commit()
 
-    def sql_list_insert(self,sql_param):
+    def sql_list_insert(self,sql_string,sql_param):
         try:
             CURSOR = self.CONN.cursor()
-            execute_values(CURSOR,'INSERT INTO tb_fund_net_worth (NET_WORTH_DATE,CODE,\
-                NET_WORTH,CUMULATIVE_NET_WORTH) VALUES %s;',sql_param)
+            execute_values(CURSOR,sql_string,sql_param)
         except Exception as e:
             self.logger.exception_log('【%s】 %s'%(sql_param,e))
         else:

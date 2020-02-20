@@ -9,17 +9,17 @@ import demjson
 from db_control import *
 from LogRecorder import *
 from session_rqst import *
+import psycopg2
 
 PATH = os.path.join(sys.path[0],"config.cfg")
 config=ConfigParser()
+print(PATH)
 config.read(PATH)
+SQL_INSERT_FUND_NET_WORTH = 'INSERT INTO tb_fund_net_worth (NET_WORTH_DATE,CODE,NET_WORTH,CUMULATIVE_NET_WORTH) VALUES (%s,%s,%s,%s)'
+SQL_INSERT_FUND_NAME = 'INSERT INTO TB_FUND_NAME VALUES (%s,%s,%s)'
+SQL_FUND_LAST_UPDATE = 'UPDATE TB_FUND_NAME SET last_update=%s WHERE CODE =%s'
 req = session_rqst()
 logger = LogRecorder()
-
-
-SQL_INSERT_FUND_NET_WORTH = 'INSERT INTO tb_fund_net_worth (NET_WORTH_DATE,CODE,NET_WORTH,CUMULATIVE_NET_WORTH) VALUES %s;'
-SQL_INSERT_FUND_NAME = 'INSERT INTO TB_FUND_NAME VALUES %s;'
-SQL_FUND_LAST_UPDATE = 'UPDATE TB_FUND_NAME SET last_update=%s WHERE CODE =%s;'
 
 
 #==================================    
@@ -57,6 +57,7 @@ def get_fund_name(page_num):
     except  Exception  as  e:
         logger.exception_log('Get %s %s'%(SINA_FUND_URL,e))
     else:
+        print(RESPONES)
         return RESPONES
 
 
@@ -68,21 +69,20 @@ def get_fund_name(page_num):
 #==================================  
 def insert_fund_name():
     DB_CTL = db_control()
+    RECORDS_PER_PAGE = int(config.get('sina_fund','num'))
+    TOTAL_RECORDS_NUM = get_fund_name(1)['total_num']
     PAGE_NUM = 1
-    TOTAL_RECORDS_NUM =get_fund_name(PAGE_NUM)['total_num']
     i = 0
     j = 0
-    arr = []
     while i < TOTAL_RECORDS_NUM:
         logger.info_log('======Starting Request Sina API From Page %s ======'%(PAGE_NUM))
         RECORDS = get_fund_name(PAGE_NUM)
 
-        while j < len(RECORDS['data']):
-            #logger.debug_log('【%s】-%s,%s'%(j,RECORDS['data'][j]['symbol'],RECORDS['data'][j]['name']))
+        while j < RECORDS_PER_PAGE:
+            logger.debug_log('INSERT INTO TB_FUND_NAME VALUES (%s,%s)'%(RECORDS['data'][j]['symbol'],RECORDS['data'][j]['name']))
             try:
-                arr.append(tuple((RECORDS['data'][j]['symbol'],\
-                        RECORDS['data'][j]['name'],\
-                        RECORDS['data'][j]['jjjl'])))
+                DB_CTL.sql_insert_excute(SQL_INSERT_FUND_NAME,(RECORDS['data'][j]['symbol'],\
+                        RECORDS['data'][j]['name'],RECORDS['data'][j]['jjjl']))
             except Exception as e:
                 logger.exception_log(e)
                 i += 1
@@ -91,11 +91,12 @@ def insert_fund_name():
             else:
                 i += 1
                 j += 1
-
+                if i == TOTAL_RECORDS_NUM:
+                    logger.info_log('======All of records are processed done !======')
+                    break
+                
         PAGE_NUM += 1
         j = 0
-    logger.info_log('======All of records are processed done !======')
-    DB_CTL.sql_list_insert(SQL_INSERT_FUND_NAME,arr)
     DB_CTL.cursor_close()
 
 
@@ -112,7 +113,7 @@ def insert_fund_value(FUND_CODE):
     TOTAL_RECORDS_NUM = RESPONES['result']['data']['total_num']
     i = 0
     j = 0
-    arr = []          
+    arr = []        
     while len(RESPONES['result']['data']['data']) != 0:
         #==================================    
         #       
@@ -150,6 +151,7 @@ def insert_fund_value(FUND_CODE):
                     j += 1
             j = 0
             PAGE_NUM += 1
+    
     logger.info_log('======All of records are processed done !======')
     DB_CTL.sql_list_insert(SQL_INSERT_FUND_NET_WORTH,arr)
     DB_CTL.sql_insert_excute(SQL_FUND_LAST_UPDATE,(datetime.date.today(),FUND_CODE))

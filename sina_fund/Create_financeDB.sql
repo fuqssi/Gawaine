@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.1
--- Dumped by pg_dump version 12.1
+-- Dumped from database version 12.2
+-- Dumped by pg_dump version 12.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -72,10 +72,498 @@ ALTER SEQUENCE public.tb_fund_net_worth_id_seq OWNED BY public.tb_fund_net_worth
 
 
 --
+-- Name: view_rate_of_return_by_15days; Type: VIEW; Schema: public; Owner: yanxl
+--
+
+CREATE VIEW public.view_rate_of_return_by_15days AS
+ WITH summary AS (
+         SELECT current.net_worth_date,
+            info.name,
+            current.code,
+            current.cumulative_net_worth AS current,
+            historical.cumulative_net_worth AS historical,
+            round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2) AS percent
+           FROM ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 15)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 1)) current,
+            ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 60)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 15)) historical,
+            ( SELECT tb_fund_name.code,
+                    tb_fund_name.name
+                   FROM public.tb_fund_name) info
+          WHERE (((current.code)::text = (historical.code)::text) AND ((info.code)::text = (current.code)::text))
+          ORDER BY (round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2)) DESC
+        )
+ SELECT row_number() OVER (ORDER BY s.percent DESC) AS rank,
+    s.net_worth_date,
+    s.name,
+    s.code,
+    s.current,
+    s.historical,
+    s.percent
+   FROM summary s;
+
+
+ALTER TABLE public.view_rate_of_return_by_15days OWNER TO yanxl;
+
+--
+-- Name: view_rate_of_return_by_180days; Type: VIEW; Schema: public; Owner: yanxl
+--
+
+CREATE VIEW public.view_rate_of_return_by_180days AS
+ WITH summary AS (
+         SELECT current.net_worth_date,
+            info.name,
+            current.code,
+            current.cumulative_net_worth AS current,
+            historical.cumulative_net_worth AS historical,
+            round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2) AS percent
+           FROM ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 15)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 1)) current,
+            ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 400)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 180)) historical,
+            ( SELECT tb_fund_name.code,
+                    tb_fund_name.name
+                   FROM public.tb_fund_name) info
+          WHERE (((current.code)::text = (historical.code)::text) AND ((info.code)::text = (current.code)::text))
+          ORDER BY (round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2)) DESC
+        )
+ SELECT row_number() OVER (ORDER BY s.percent DESC) AS rank,
+    s.net_worth_date,
+    s.name,
+    s.code,
+    s.current,
+    s.historical,
+    s.percent
+   FROM summary s;
+
+
+ALTER TABLE public.view_rate_of_return_by_180days OWNER TO yanxl;
+
+--
+-- Name: view_rate_of_return_by_1day; Type: VIEW; Schema: public; Owner: yanxl
+--
+
+CREATE VIEW public.view_rate_of_return_by_1day AS
+ WITH summary AS (
+         SELECT current.net_worth_date,
+            info.name,
+            current.code,
+            current.cumulative_net_worth AS current,
+            historical.cumulative_net_worth AS historical,
+            round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2) AS percent
+           FROM ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 15)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 1)) current,
+            ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 15)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 2)) historical,
+            ( SELECT tb_fund_name.code,
+                    tb_fund_name.name
+                   FROM public.tb_fund_name) info
+          WHERE (((current.code)::text = (historical.code)::text) AND ((info.code)::text = (current.code)::text))
+          ORDER BY (round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2)) DESC
+        )
+ SELECT row_number() OVER (ORDER BY s.percent DESC) AS rank,
+    s.net_worth_date,
+    s.name,
+    s.code,
+    s.current,
+    s.historical,
+    s.percent
+   FROM summary s;
+
+
+ALTER TABLE public.view_rate_of_return_by_1day OWNER TO yanxl;
+
+--
+-- Name: view_rate_of_return_by_30days; Type: VIEW; Schema: public; Owner: yanxl
+--
+
+CREATE VIEW public.view_rate_of_return_by_30days AS
+ WITH summary AS (
+         SELECT current.net_worth_date,
+            info.name,
+            current.code,
+            current.cumulative_net_worth AS current,
+            historical.cumulative_net_worth AS historical,
+            round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2) AS percent
+           FROM ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 15)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 1)) current,
+            ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 60)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 30)) historical,
+            ( SELECT tb_fund_name.code,
+                    tb_fund_name.name
+                   FROM public.tb_fund_name) info
+          WHERE (((current.code)::text = (historical.code)::text) AND ((info.code)::text = (current.code)::text))
+          ORDER BY (round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2)) DESC
+        )
+ SELECT row_number() OVER (ORDER BY s.percent DESC) AS rank,
+    s.net_worth_date,
+    s.name,
+    s.code,
+    s.current,
+    s.historical,
+    s.percent
+   FROM summary s;
+
+
+ALTER TABLE public.view_rate_of_return_by_30days OWNER TO yanxl;
+
+--
+-- Name: view_rate_of_return_by_365days; Type: VIEW; Schema: public; Owner: yanxl
+--
+
+CREATE VIEW public.view_rate_of_return_by_365days AS
+ WITH summary AS (
+         SELECT current.net_worth_date,
+            info.name,
+            current.code,
+            current.cumulative_net_worth AS current,
+            historical.cumulative_net_worth AS historical,
+            round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2) AS percent
+           FROM ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 15)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 1)) current,
+            ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 400)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 365)) historical,
+            ( SELECT tb_fund_name.code,
+                    tb_fund_name.name
+                   FROM public.tb_fund_name) info
+          WHERE (((current.code)::text = (historical.code)::text) AND ((info.code)::text = (current.code)::text))
+          ORDER BY (round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2)) DESC
+        )
+ SELECT row_number() OVER (ORDER BY s.percent DESC) AS rank,
+    s.net_worth_date,
+    s.name,
+    s.code,
+    s.current,
+    s.historical,
+    s.percent
+   FROM summary s;
+
+
+ALTER TABLE public.view_rate_of_return_by_365days OWNER TO yanxl;
+
+--
+-- Name: view_rate_of_return_by_3days; Type: VIEW; Schema: public; Owner: yanxl
+--
+
+CREATE VIEW public.view_rate_of_return_by_3days AS
+ WITH summary AS (
+         SELECT current.net_worth_date,
+            info.name,
+            current.code,
+            current.cumulative_net_worth AS current,
+            historical.cumulative_net_worth AS historical,
+            round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2) AS percent
+           FROM ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 15)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 1)) current,
+            ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 15)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 3)) historical,
+            ( SELECT tb_fund_name.code,
+                    tb_fund_name.name
+                   FROM public.tb_fund_name) info
+          WHERE (((current.code)::text = (historical.code)::text) AND ((info.code)::text = (current.code)::text))
+          ORDER BY (round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2)) DESC
+        )
+ SELECT row_number() OVER (ORDER BY s.percent DESC) AS rank,
+    s.net_worth_date,
+    s.name,
+    s.code,
+    s.current,
+    s.historical,
+    s.percent
+   FROM summary s;
+
+
+ALTER TABLE public.view_rate_of_return_by_3days OWNER TO yanxl;
+
+--
+-- Name: view_rate_of_return_by_7days; Type: VIEW; Schema: public; Owner: yanxl
+--
+
+CREATE VIEW public.view_rate_of_return_by_7days AS
+ WITH summary AS (
+         SELECT current.net_worth_date,
+            info.name,
+            current.code,
+            current.cumulative_net_worth AS current,
+            historical.cumulative_net_worth AS historical,
+            round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2) AS percent
+           FROM ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 15)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 1)) current,
+            ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 15)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 7)) historical,
+            ( SELECT tb_fund_name.code,
+                    tb_fund_name.name
+                   FROM public.tb_fund_name) info
+          WHERE (((current.code)::text = (historical.code)::text) AND ((info.code)::text = (current.code)::text))
+          ORDER BY (round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2)) DESC
+        )
+ SELECT row_number() OVER (ORDER BY s.percent DESC) AS rank,
+    s.net_worth_date,
+    s.name,
+    s.code,
+    s.current,
+    s.historical,
+    s.percent
+   FROM summary s;
+
+
+ALTER TABLE public.view_rate_of_return_by_7days OWNER TO yanxl;
+
+--
+-- Name: view_rate_of_return_by_90days; Type: VIEW; Schema: public; Owner: yanxl
+--
+
+CREATE VIEW public.view_rate_of_return_by_90days AS
+ WITH summary AS (
+         SELECT current.net_worth_date,
+            info.name,
+            current.code,
+            current.cumulative_net_worth AS current,
+            historical.cumulative_net_worth AS historical,
+            round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2) AS percent
+           FROM ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 15)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 1)) current,
+            ( SELECT t.id,
+                    t.net_worth_date,
+                    t.code,
+                    t.net_worth,
+                    t.cumulative_net_worth,
+                    t.rk
+                   FROM ( SELECT tb_fund_net_worth.id,
+                            tb_fund_net_worth.net_worth_date,
+                            tb_fund_net_worth.code,
+                            tb_fund_net_worth.net_worth,
+                            tb_fund_net_worth.cumulative_net_worth,
+                            row_number() OVER (PARTITION BY tb_fund_net_worth.code ORDER BY tb_fund_net_worth.net_worth_date DESC) AS rk
+                           FROM public.tb_fund_net_worth
+                          WHERE ((tb_fund_net_worth.net_worth_date >= (CURRENT_DATE - 180)) AND (tb_fund_net_worth.net_worth_date <= CURRENT_DATE))) t
+                  WHERE (t.rk = 90)) historical,
+            ( SELECT tb_fund_name.code,
+                    tb_fund_name.name
+                   FROM public.tb_fund_name) info
+          WHERE (((current.code)::text = (historical.code)::text) AND ((info.code)::text = (current.code)::text))
+          ORDER BY (round(((((current.cumulative_net_worth - historical.cumulative_net_worth) / historical.cumulative_net_worth) * (100)::double precision))::numeric, 2)) DESC
+        )
+ SELECT row_number() OVER (ORDER BY s.percent DESC) AS rank,
+    s.net_worth_date,
+    s.name,
+    s.code,
+    s.current,
+    s.historical,
+    s.percent
+   FROM summary s;
+
+
+ALTER TABLE public.view_rate_of_return_by_90days OWNER TO yanxl;
+
+--
 -- Name: tb_fund_net_worth id; Type: DEFAULT; Schema: public; Owner: yanxl
 --
 
 ALTER TABLE ONLY public.tb_fund_net_worth ALTER COLUMN id SET DEFAULT nextval('public.tb_fund_net_worth_id_seq'::regclass);
+
+
+--
+-- Name: tb_fund_net_worth cons_uniq_date_code; Type: CONSTRAINT; Schema: public; Owner: yanxl
+--
+
+ALTER TABLE ONLY public.tb_fund_net_worth
+    ADD CONSTRAINT cons_uniq_date_code UNIQUE (net_worth_date, code);
 
 
 --
@@ -92,6 +580,27 @@ ALTER TABLE ONLY public.tb_fund_name
 
 ALTER TABLE ONLY public.tb_fund_net_worth
     ADD CONSTRAINT tb_fund_net_worth_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: indx_tb_fund_name_code; Type: INDEX; Schema: public; Owner: yanxl
+--
+
+CREATE INDEX indx_tb_fund_name_code ON public.tb_fund_name USING btree (code);
+
+
+--
+-- Name: indx_tb_fund_name_lastdate; Type: INDEX; Schema: public; Owner: yanxl
+--
+
+CREATE INDEX indx_tb_fund_name_lastdate ON public.tb_fund_name USING btree (last_update);
+
+
+--
+-- Name: indx_tb_fund_net_worth_date_code; Type: INDEX; Schema: public; Owner: yanxl
+--
+
+CREATE INDEX indx_tb_fund_net_worth_date_code ON public.tb_fund_net_worth USING btree (net_worth_date, code);
 
 
 --

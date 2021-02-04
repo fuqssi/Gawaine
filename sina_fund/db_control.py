@@ -28,12 +28,12 @@ class db_control:
         else:
             return RESULT         
 
-    def sql_insert_excute(self,sql_string,sql_param):
+    def sql_insert_excute(self,sql_string):
         try:
             CURSOR = self.CONN.cursor()
-            CURSOR.execute(sql_string,sql_param)
+            CURSOR.execute(sql_string)
         except Exception as e:
-            self.logger.exception_log('【%s %s】 %s'%(sql_string,sql_param,e))
+            self.logger.exception_log('【%s】 %s'%(sql_string,e))
         else:
             return None
         finally:
@@ -49,6 +49,24 @@ class db_control:
             return None
         finally:
             self.CONN.commit()
+
+    def update_tb_name(self):
+        try:
+            SQL_STR = '''update  tb_fund_name  set last_update=last_worth."net_worth_date" from 
+            (SELECT * FROM
+            (SELECT *,ROW_NUMBER()OVER(PARTITION BY CODE ORDER BY net_worth_date DESC)  AS RK from tb_fund_net_worth 
+            WHERE Net_worth_date BETWEEN current_date - 180 AND current_date) T WHERE RK = 1) as last_worth 
+            where last_worth.code=tb_fund_name.code;'''
+            CURSOR = self.CONN.cursor()
+            CURSOR.execute(SQL_STR)
+        except Exception as e:
+            self.logger.exception_log('【%s】'%(e))
+        else:
+            self.CONN.commit()
+            return None
+        finally:
+            self.logger.info_log('======Database records are update done !======')
+
     
     def cursor_close(self):
         self.CONN.close()
@@ -56,9 +74,5 @@ class db_control:
 
 if __name__ == "__main__":
     DB_CTL = db_control()
-    DB_CTL.sql_insert_excute('INSERT INTO TB_FUND_NAME VALUES',('001101'))
+    DB_CTL.update_tb_name()
     DB_CTL.cursor_close()
-'''    res = DB_CTL.sql_select_excute('select * from tb_fund_name;')
-    print(res[0][0])
-'''
-    
